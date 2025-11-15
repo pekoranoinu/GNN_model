@@ -35,10 +35,9 @@
 
 ```
 .
-├── GNN/
-│   └── Model/
-│       ├── graph_based_model.py     # GraphSAGE 模型、AMP、訓練流程
-│       └── README.md
+├── Model/
+│   ├── graph_based_model.py     # GraphSAGE 模型、AMP、訓練流程
+│   └── README.md
 │
 ├── Preprocess/
 │   ├── data_preprocess.py           # CSV 載入、欄位對應、帳戶特徵萃取
@@ -118,7 +117,7 @@ python main.py     --device auto --epochs 3000 --patience 200     --hidden 128 -
 
 ---
 
-## GNN/Model/graph_based_model.py
+## Model/graph_based_model.py
 
 這個 Python 程式實作整個 GNN 模型的核心，包括圖結構建置、GraphSAGE 模型架構、閾值搜尋工具，以及完整的全圖訓練流程。 它負責將帳戶特徵與交易圖結合，並在 GPU/CPU 上執行高效率的全圖訓練與推論。  
 
@@ -155,3 +154,4 @@ python main.py     --device auto --epochs 3000 --patience 200     --hidden 128 -
 - Conservative search 最佳 threshold = **0.581**  
 - 使用 threshold = 0.581 → Validation F1 = **0.7048**  
 - Model 預測 **127 個帳戶** 為 alert / suspicious  
+
