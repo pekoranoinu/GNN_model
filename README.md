@@ -148,10 +148,10 @@ python main.py --device auto --epochs 3000 --patience 200 --hidden 128 --layers 
 
 ## 實驗結果
 
-- Validation F1 = **0.6866**（threshold = 0.500）  
-- Conservative search 最佳 threshold = **0.581**  
-- 使用 threshold = 0.581 → Validation F1 = **0.7048**  
-- Model 預測 **127 個帳戶** 為 alert / suspicious  
+- Validation F1 = **0.6739**（threshold = 0.500）  
+- Conservative search 最佳 threshold = **0.696**  
+- 使用 threshold = 0.696 → Validation F1 = **0.7029**  
+- Model 預測 **122 個帳戶** 為 alert / suspicious  
 
 
 
