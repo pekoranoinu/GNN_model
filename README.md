@@ -92,7 +92,7 @@ pip install -r requirements.txt --index-url https://download.pytorch.org/whl/cu1
 ### 3. 執行程式
 
 ```bash
-python main.py     --device auto --epochs 3000 --patience 200     --hidden 128 --layers 3 --dropout 0.3     --lr 3e-3 --weight_decay 5e-4     --label_smoothing 0.02 --eval_every 10 --grad_ckpt
+python main.py --device auto --epochs 3000 --patience 200 --hidden 128 --layers 3 --dropout 0.3 --lr 3e-3 --weight_decay 5e-4 --label_smoothing 0.02 --eval_every 10 --grad_ckpt
 ```
 
 執行後會產生 `result.csv`。
