@@ -1,4 +1,4 @@
-# AI CUP 2025 玉山人工智慧公開挑戰賽 — GNN Baseline（GraphSAGE）
+# AI CUP 2025 玉山人工智慧公開挑戰賽 — GraphSAGE-based GNN
 
 ## 介紹
 本專案為「2025 玉山人工智慧公開挑戰賽」的實作範本，展示如何利用交易資料構建帳戶圖，並透過 Graph Neural Network（GraphSAGE）進行二元分類。
@@ -152,6 +152,7 @@ python main.py     --device auto --epochs 3000 --patience 200     --hidden 128 -
 - Conservative search 最佳 threshold = **0.581**  
 - 使用 threshold = 0.581 → Validation F1 = **0.7048**  
 - Model 預測 **127 個帳戶** 為 alert / suspicious  
+
 
 
 
