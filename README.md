@@ -78,7 +78,6 @@
 pip install -r requirements.txt --index-url https://download.pytorch.org/whl/cu121
 ```
 
----
 
 ### 2. 準備資料
 請將以下 CSV 放在 `dir_path`（預設為 `../preliminary_data/`）：
@@ -89,7 +88,6 @@ pip install -r requirements.txt --index-url https://download.pytorch.org/whl/cu1
 
 若資料位置不同，請修改 `main.py` 的 `dir_path`。
 
----
 
 ### 3. 執行程式
 
@@ -154,5 +152,6 @@ python main.py     --device auto --epochs 3000 --patience 200     --hidden 128 -
 - Conservative search 最佳 threshold = **0.581**  
 - 使用 threshold = 0.581 → Validation F1 = **0.7048**  
 - Model 預測 **127 個帳戶** 為 alert / suspicious  
+
 
 
