@@ -1,13 +1,13 @@
 # AI CUP 2025 玉山人工智慧公開挑戰賽 — GraphSAGE-based GNN
 
 ## 介紹
-本專案為「2025 玉山人工智慧公開挑戰賽」的實作範本，展示如何利用交易資料構建帳戶圖，並透過 Graph Neural Network（GraphSAGE）進行二元分類。
+本專案為「2025 玉山人工智慧公開挑戰賽」的實作，展示如何利用交易資料構建帳戶本身的特徵向量，與連結帳戶之間的交易關係圖，並透過 GraphSAGE-based 的 Graph Neural Network (GNN) 進行警示帳戶的辨別。
 
 專案包含三個核心 Python 模組：
 
-- `Preprocess/data_preprocess.py`：資料前處理與帳戶特徵工程  
-- `Model/graph_based_model.py`：圖建構、GraphSAGE 模型、AMP、訓練  
-- `main.py`：完整 pipeline（訓練與預測 `result.csv`）
+- `Preprocess/data_preprocess.py`：資料預處理與建構帳戶特徵向量  
+- `Model/graph_based_model.py`：建構圖神經網路、GraphSAGE 模型架構、訓練流程  
+- `main.py`：負責串聯所有步驟，包含資料解析、預處理、模型訓練、threshold 搜尋與輸出`result.csv`
 
 
 ---
@@ -23,7 +23,7 @@
 ### 警示帳戶（`acct_alert.csv`）
 - 約 1000 筆，每筆為一個警示帳戶及對應之警示日
 
-### 需預測帳戶（`acct_predict.csv`）
+### 待預測帳戶（`acct_predict.csv`）
 - 約 4000 筆，需預測其是否在未來 1 個月內成為警示帳戶
 
 專案會自動處理欄名不一致、資料 mapping、帳戶對齊等問題。
@@ -40,10 +40,10 @@
 │   └── README.md
 │
 ├── Preprocess/
-│   ├── data_preprocess.py           # CSV 載入、欄位對應、帳戶特徵萃取
+│   ├── data_preprocess.py           # CSV 載入、欄位對應、擷取帳戶特徵
 │   └── README.md
 │
-├── main.py                          # 主程式：完整 pipeline 與結果輸出
+├── main.py                          # 主程式：連接資料預處理、模型訓練、與結果輸出
 ├── requirements.txt                 # 套件需求
 └── README.md                        # 本檔案
 ```
@@ -52,11 +52,11 @@
 
 ## 主要功能
 
-- 自動辨識欄位名稱（如 `src` / `dst` / `amt`）
-- 交易資料聚合 → 帳戶向量特徵
-- 建構 Compresses Sparse Row (CSR) Adjacency（含雙向邊＋self-loop）
+- 辨識欄位名稱（如 `src` / `dst` / `amt`）
+- 交易資料彙整，提取帳戶特徵向量
+- 建構 Compresses Sparse Row (CSR) Adjacency（含雙向邊與self-loop）
 - GraphSAGE full-batch 訓練
-- 在 Recall 不低於最低要求的前提下，從多個 threshold 中挑選 F1-score 最佳時的 threshold
+- 利用validation資料，挑選 F1-score 的最佳 threshold
 - 輸出比賽格式之 `result.csv`
 
 
@@ -102,42 +102,42 @@ python main.py --device auto --epochs 3000 --patience 200 --hidden 128 --layers 
 
 ## Preprocess/data_preprocess.py
 
-這個 Python 程式負責比賽資料的前處理工作。它會讀取三個主要資料集、辨識不同版本資料中的欄位名稱，並將多筆交易紀錄聚合為帳戶層級特徵，最終輸出可直接供 GNN 使用的節點特徵矩陣。本模組是整個 GNN 模型的資料基礎。  
+此Python程式負責比賽資料的預處理。透過讀取三個資料集，並提取各個資料集的欄位資訊，其為每個帳戶建構交易特徵向量，可直接提供 GNN 在後續訓練使用。此為整個模型的資料基礎。
 
 ### 主要函式
 - `load_csvs(data_dir)`：讀取三大資料集  
-- `find_col(df, candidates)`：自動辨識欄位名稱  
+- `find_col(df, candidates)`：辨識資料集中的欄位名稱  
 - `resolve_columns(tx, alert, predict)`：統一欄位命名（來源、目的、金額等）  
-- `build_account_features(tx, col)`：將交易紀錄轉成帳戶層級特徵  
-  - 包含轉入/轉出金額統計、degree 特徵、交易次數、log1p特徵、是否為玉山銀行帳戶推斷  
+- `build_account_features(tx, col)`：將交易紀錄轉成帳戶特徵向量  
+  - 包含轉入/轉出金額統計、degree 特徵、交易次數、log1p特徵與推斷是否為玉山銀行帳戶  
 
 
 ---
 
 ## Model/graph_based_model.py
 
-這個 Python 程式實作整個 GNN 模型的核心，包括圖結構建置、GraphSAGE 模型架構、閾值搜尋工具，以及完整的全圖訓練流程。 它負責將帳戶特徵與交易圖結合，並在 GPU/CPU 上執行高效率的全圖訓練與推論。  
+此 Python 程式實作整個 GNN 模型，包括圖結構建置、GraphSAGE 模型架構、自動threshold搜尋，以及完整的模型訓練流程。 其負責將帳戶特徵向量與交易關係圖結合，並在 GPU/CPU 上執行高效率的全圖訓練與推論。  
 
 ### 主要元件
 - `build_graph(tx, col, acct2idx)`：建立帳戶間的 CSR adjacency（支援雙向、自動加入 self-loop）
-- `SAGELayer`：實作 GraphSAGE 的鄰居特徵聚合
+- `SAGELayer`：實作 GraphSAGE，聚合自身與鄰居特徵
 - `SAGEBlock`：LayerNorm + PReLU + Dropout + Residual
-- `SAGEModel`：多層 GraphSAGE（支援 gradient checkpointing）
+- `SAGEModel`：多層 GraphSAGE，支援 gradient checkpointing 以降低 GPU 負載
 - `train_model_fullbatch(...)`：全圖訓練、AMP、pos_weight、early stopping
-- `select_conservative_threshold(...)`：以 Recall 下限條件搜尋最佳 threshold
+- `select_conservative_threshold(...)`：利用 validation set 搜尋最佳 threshold
 
 
 ---
 
 ## main.py
 
-這個 Python 程式整合了本專案的所有流程，包含資料讀取、欄位解析、特徵工程、圖建構、模型訓練、閾值搜尋與最終結果輸出。 將前處理模組與 GNN 模型結合，形成以下流程。
+此 Python 程式整合了本專案的所有流程，包含資料讀取、特徵向量提取、圖建構、模型訓練、閾值搜尋與最終結果輸出。 將預處理模組與 GNN 模型結合，形成以下流程:
 
-1. 載入三大資料集  
-2. 自動解析欄位名稱  
-3. 建立帳戶特徵  
-4. 將每一個帳戶的字串 ID 轉換成連續的編號，使帳戶能作為圖神經網路中的節點被使用
-5. Construct CSR adjacency  
+1. 載入原始資料集  
+2. 擷取各欄位資訊  
+3. 建立帳戶特徵向量  
+4. 將每個帳戶對應到圖神經網路中的單一節點  
+5. 建構 CSR adjacency  
 6. Full-batch GraphSAGE 訓練（AMP + early stopping）  
 7. Threshold 搜尋  
 8. 輸出 `result.csv`
